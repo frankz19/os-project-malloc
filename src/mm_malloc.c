@@ -2,6 +2,7 @@
 #include "mm_malloc.h"
 #include <sys/types.h>
 #include <stddef.h>
+#include <string.h>
 
 
 // silent apple erros of sbrk deprecated
@@ -128,10 +129,13 @@ void my_free(void *ptr) {
 }
 
 void *my_calloc(size_t nmemb, size_t size) {
-    // TODO: Usar my_malloc y luego memset a 0.
-    (void)nmemb;
-    (void)size;
-    return NULL;
+    size_t necesary_size = nmemb * size;
+
+    void *ptr = my_malloc(necesary_size);
+    if (ptr) {
+        memset(ptr, 0, necesary_size);
+    }
+    return ptr;
 }
 
 void *my_realloc(void *ptr, size_t size) {
