@@ -3,6 +3,14 @@
 #include <sys/types.h>
 #include <stddef.h>
 
+
+// silent apple erros of sbrk deprecated
+#ifdef __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+
+
 // Inicio de la lista enlazada del heap
 void *base = NULL;
 
@@ -91,14 +99,19 @@ void *my_malloc(size_t size) {
 void my_free(void *ptr) {
     // TODO: Marcar el bloque como libre.
     // TODO: Fusionar bloques adyacentes (Coalescing).
+    (void)ptr;
 }
 
 void *my_calloc(size_t nmemb, size_t size) {
     // TODO: Usar my_malloc y luego memset a 0.
+    (void)nmemb;
+    (void)size;
     return NULL;
 }
 
 void *my_realloc(void *ptr, size_t size) {
     // TODO: Redimensionar el bloque o moverlo a uno nuevo.
+    (void)ptr;
+    (void)size;
     return NULL;
 }
