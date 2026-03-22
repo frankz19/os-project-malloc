@@ -76,7 +76,7 @@ static block_meta *find_free_block(block_meta **last, size_t size) {
 
 
 void *my_malloc(size_t size) {
-   block_meta *block;
+    block_meta *block;
     size_t s;
 
     if (size <= 0) {
@@ -139,8 +139,32 @@ void *my_calloc(size_t nmemb, size_t size) {
 }
 
 void *my_realloc(void *ptr, size_t size) {
-    // TODO: Redimensionar el bloque o moverlo a uno nuevo.
-    (void)ptr;
-    (void)size;
-    return NULL;
+    
+    if (!ptr) {
+        return my_malloc(size);
+    }
+
+    if (size == 0) {
+        my_free(ptr);
+        return NULL;
+    }
+
+    block_meta *block = (block_meta *)ptr - 1;
+    
+    if (block->size >= size) {
+        return ptr;
+    }
+
+    void *new_ptr = my_malloc(size);
+
+    if(!new_ptr) {
+        return NULL;
+    }
+
+    memcpy(new_ptr, ptr, block->size);
+
+    my_free(ptr);
+
+    return new_ptr;
+    
 }
