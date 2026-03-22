@@ -31,6 +31,11 @@ void *base = NULL;
  * last: pointer to save last block visited.
  * size: size necesary.
  * @return: pointer to free block or NULL.
+ * 
+ * 
+ * split_block: split large block to free one.
+ * block: original large block.
+ * size: size of necesary space.
  */
 
 
@@ -69,6 +74,22 @@ static block_meta *find_free_block(block_meta **last, size_t size) {
     return current; //return valid adress block or NULL
 }
 
+static void split_block(block_meta *block, size_t size) {
+    
+    if (block->size >= (size + META_SIZE + 16)) { // spliting threshold
+
+        block_meta *new_free_block = (block_meta *)((char *)block + META_SIZE + size);
+
+        new_free_block->size = block->size - size - META_SIZE;
+        new_free_block->next = block->next;
+        new_free_block->free = 1;
+        new_free_block->magic = 0x4652414E;
+
+        block->size = size;
+        block->next = new_free_block;
+    }
+}
+
 //extra functions
 
 
@@ -77,13 +98,17 @@ static block_meta *find_free_block(block_meta **last, size_t size) {
 
 void *my_malloc(size_t size) {
     block_meta *block;
-    size_t s;
+
+    if (size > (size_t)-1 - 7 - META_SIZE) {
+        return NULL; 
+    }
+    
 
     if (size <= 0) {
         return NULL;
     }
 
-    s = ALIGN(size);
+    size_t s = ALIGN(size);
     
     if (base == NULL) {
 
@@ -119,9 +144,19 @@ void my_free(void *ptr) {
     if (!ptr) {
         return;
     }
+
+    if (ptr < base) {
+        return;
+    }
+
+
     block_meta *block = (block_meta*)ptr -1; //acces to strcut data of block
 
     if ( block->magic != 0x4652414E) { //check valid block with secutity sign
+        return;
+    }
+
+    if (block->free) {
         return;
     }
     
@@ -129,6 +164,11 @@ void my_free(void *ptr) {
 }
 
 void *my_calloc(size_t nmemb, size_t size) {
+    
+    if (size != 0 && nmemb > (size_t)-1 / size) {
+        return NULL; // Overflow detectado, no podemos asignar tanta memoria
+    }
+    
     size_t necesary_size = nmemb * size;
 
     void *ptr = my_malloc(necesary_size);
@@ -149,9 +189,11 @@ void *my_realloc(void *ptr, size_t size) {
         return NULL;
     }
 
+    size_t s = ALIGN(size);
     block_meta *block = (block_meta *)ptr - 1;
     
-    if (block->size >= size) {
+    if (block->size >= s) {
+        split_block(block, s);
         return ptr;
     }
 
