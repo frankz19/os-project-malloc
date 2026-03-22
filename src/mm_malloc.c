@@ -26,7 +26,14 @@ void *base = NULL;
  * return: pointer to new element or null.
  * 
  * 
+ * find_free_block: search avaliable and sufucient block in list.
+ * last: pointer to save last block visited.
+ * size: size necesary.
+ * @return: pointer to free block or NULL.
  */
+
+
+
 
 static block_meta *request_space(block_meta *last, size_t size) {
     block_meta *block;
@@ -50,6 +57,17 @@ static block_meta *request_space(block_meta *last, size_t size) {
 
     return block;
 }
+
+static block_meta *find_free_block(block_meta **last, size_t size) {
+    block_meta *current = (block_meta *)base;
+
+    while (current && !(current->free && current->size >= size)) {
+        *last = current; //update last
+        current = current->next;
+    }
+    return current; //return valid adress block or NULL
+}
+
 //extra functions
 
 
@@ -80,8 +98,7 @@ void *my_malloc(size_t size) {
 
         block_meta *last = base;
 
-        block = NULL;
-        //block = find_free_block(&last, s);
+        block = find_free_block(&last, s);
         
         if (!block) { 
 
@@ -97,9 +114,17 @@ void *my_malloc(size_t size) {
 }
 
 void my_free(void *ptr) {
-    // TODO: Marcar el bloque como libre.
-    // TODO: Fusionar bloques adyacentes (Coalescing).
-    (void)ptr;
+    
+    if (!ptr) {
+        return;
+    }
+    block_meta *block = (block_meta*)ptr -1; //acces to strcut data of block
+
+    if ( block->magic != 0x4652414E) { //check valid block with secutity sign
+        return;
+    }
+    
+    block->free = 1;
 }
 
 void *my_calloc(size_t nmemb, size_t size) {
